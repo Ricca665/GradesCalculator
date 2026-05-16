@@ -59,19 +59,24 @@ def check():
         output = subprocess.check_output(["mpremote"], stderr=subprocess.STDOUT, timeout=3)
         no_device_connected_error()
     except subprocess.TimeoutExpired:
-        import time; time.sleep(1)
+        time.sleep(1)
         output = None
 
     if output != None:
         if "no device" in output.decode():
             no_device_connected_error()
+    
+    # clean up the mess i guess?
+    time.sleep(1.25)
+    for i in range(3):
+        subprocess.run(["mpremote", "reset"], capture_output=True, text=True)
+        time.sleep(1.25)
 
 check()
 
 print("Finished checking, device found! Beginning installation!!!")
 print("DO NOT TURN OFF DEVICE!!")
 command = []
-files_temp = []
 
 for index, file in enumerate(files):
     file_abs = os.path.abspath(file).replace("\\", "/")
@@ -86,14 +91,14 @@ for index, file in enumerate(files):
     command = ["mpremote", "cp" , file_abs, f":{file}"]
     print(command)
     try:
-        output = subprocess.run(command, capture_output=True, text=True)
+        output = subprocess.run(command, capture_output=False, text=True)
     except Exception as e:
         output = None
         print(f"An error occured while copying: {file}:")
         print(e)
         exit(1)
-        
-    if output != None:
+
+    if output != None and output == None: # temporarly skip this
         if "error" in output.lower() or "exception" in output.lower():
             print("An error has occured while copying:")
             print(output)
