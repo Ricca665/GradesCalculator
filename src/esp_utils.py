@@ -1,5 +1,5 @@
 import subprocess, time
-def hard_reset(is_transfermode=True):
+def hard_reset(is_transfermode=True, exit_after_reset=True):
     if is_transfermode:
         print("Removing transfer mode flag...")
         subprocess.run(["mpremote", "reset"], capture_output=True, text=False)
@@ -8,5 +8,6 @@ def hard_reset(is_transfermode=True):
 
     print("Resetting device...")
     subprocess.run(["mpremote", "reset"], capture_output=True, text=True)
-    print("Exiting...")
-    exit()
+    if exit_after_reset:
+        print("Exiting...")
+        exit()

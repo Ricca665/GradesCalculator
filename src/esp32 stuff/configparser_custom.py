@@ -1,7 +1,7 @@
 class ConfigParser:
     def __init__(self):
-        self._data = {}
         print("Loaded custom configparser")
+        self._data = {}
 
     def read(self, filename):
         self._data = {}

@@ -1,37 +1,40 @@
-import os, subprocess
+import os, subprocess, shutil
 from esp_utils import hard_reset
+import sys
+import random
+import zipfile, time
 
 print("GRADES CALCULATOR ESP32 INSTALLER V1.0")
-print("Step 1/2: Checking for files...")
-files = os.listdir(os.getcwd())
-try:
-    files.pop(files.index("installer.py"))
-    
-    files.pop(files.index("main.py"))
-    files.pop(files.index("main_esp32.py"))
-    files.pop(files.index("esp_utils.py"))
-    files.pop(files.index("connector_app.py"))
-    # we dgaf if __pycache__ ain't there zro
-    try:
-        files.pop(files.index("__pycache__"))
-    except:
-        pass
-
-    # and also this
-    try:
-        files.pop(files.index("grades_report"))
-    except:
-        pass
-except Exception as e:
-    print(f"Error while setting up installer enviroment!")
-    print(f"Error:\n{e}")
+args = sys.argv
+args.append("C:/Users/riccar10210/Desktop/gradescalculator/package.zip")
+if len(args) <= 1:
+    print(f"You forgot to parse the install package as a parameter {"you fucking buffoon" if random.random() > 0.5 else ""}")
     exit(1)
-finally:
-    files.insert(0, "main_esp32.py")
-    for i in files:
-        if not os.path.exists(i):
-            print(f"File {i} doesn't exist! Make sure it exists at {os.getcwd()}")
-            exit(1)
+
+file = args[1]
+print("Step 1/2: Checking for files...")
+if not os.path.exists(file):
+    print(f"Package file {file} doesn't exist!")
+    exit(1)
+
+if not ".zip" in file:
+    print("File is not zip file!")
+    exit(1)
+
+with zipfile.ZipFile(file,"r") as zip_ref:
+    zip_ref.extractall("package_dir")
+
+os.chdir("package_dir")
+files = os.listdir(".")
+try:
+    # shift array so the first element is always the main program
+    index = files.index("main.py")
+    value = files[index]
+    files.pop(index)
+    files.insert(0, value)
+except ValueError:
+    print("Main program not found on drive! Exiting...")
+    exit(1)
 
 print("Step 2/2: Checking for device...")
 def check():
@@ -47,24 +50,63 @@ def check():
     if output.decode().lower().replace(" ", "").replace("\n", "").replace("\r", "") == "":
         no_device_connected_error()
 
+    # weird logic, but it boils down to these steps
+    # if mpremote manages to connect to the remote device that means it's going to be connected for longer (aka indefenetly)
+    # which means that it's going to trigger the timeout expired
+    # if it instead doesn't do that aka displays a no device connected error, we automatically know
+    # with some safety checks ofc, that it didn't connect since the timeout didn't trigger
+    try:
+        output = subprocess.check_output(["mpremote"], stderr=subprocess.STDOUT, timeout=3)
+        no_device_connected_error()
+    except subprocess.TimeoutExpired:
+        import time; time.sleep(1)
+        output = None
+
+    if output != None:
+        if "no device" in output.decode():
+            no_device_connected_error()
+
 check()
-print("Finished checking, Device found! Beginning installation!!!")
+
+print("Finished checking, device found! Beginning installation!!!")
 print("DO NOT TURN OFF DEVICE!!")
+command = []
+files_temp = []
 
 for index, file in enumerate(files):
-    if "main_esp32.py" in file:
+    file_abs = os.path.abspath(file).replace("\\", "/")
+    
+    if "main.py" in file:
         print(f"Copying main program!, {index+1} / {len(files)}")
-        command = f"mpremote cp {file} :main.py"
+        
     else:
         print(f"Copying file: {file}, {index+1} / {len(files)}")
-        command = f"mpremote cp {file} :{file}"
     
+    time.sleep(1)
+    command = ["mpremote", "cp" , file_abs, f":{file}"]
+    print(command)
     try:
-        subprocess.run(command.split(), capture_output=True, text=False)
-    except ChildProcessError as e:
+        output = subprocess.run(command, capture_output=True, text=True)
+    except Exception as e:
+        output = None
         print(f"An error occured while copying: {file}:")
         print(e)
         exit(1)
+        
+    if output != None:
+        if "error" in output.lower() or "exception" in output.lower():
+            print("An error has occured while copying:")
+            print(output)
+            exit(1)
+    
+    time.sleep(1)
+    
 
 print("FINISHED INSTALLATION!! RESETTING...")
-hard_reset(is_transfermode=False)
+hard_reset(is_transfermode=False, exit_after_reset=False)
+
+print("Cleaning up...")
+os.chdir("..")
+shutil.rmtree("package_dir", True)
+print("Done!")
+exit()

@@ -1,4 +1,3 @@
-import os
 import configparser_custom
 config = configparser_custom.ConfigParser()
 
@@ -10,16 +9,11 @@ filename = "grades.ini"
 
 def init_diary() -> None:
     try:
-        if not os.path.exists(filename):
-            with open(filename, "w") as f:
-                pass
-    except:
-        try:
-            with open(filename, "r"):
-                pass
-        except OSError:
-            with open(filename, "w") as f:
-                f.write("")
+        with open(filename, "r"):
+            pass
+    except OSError:
+        with open(filename, "w") as f:
+            f.write("")
 
 def backup_grades():
     f = open(filename, "r")
@@ -58,7 +52,7 @@ def write_grade(subject:str="", grades:list[float]=None) -> None: # type: ignore
 def read_grades(subject:str="") -> list[float]:
     try:
         config_file = config.read(filename)
-        return literal_eval(config[subject]["grades"]) # pyright: ignore[reportReturnType]
+        return literal_eval(config[subject]["grades"])
     except:
         return []
 

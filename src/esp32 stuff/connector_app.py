@@ -26,6 +26,7 @@ def check_for_device():
             print("Device is not in transfer mode!")
             print("Please put device in transfer mode via settings")
             exit(1)
+            
     subprocess.run(["mpremote", "reset"], capture_output=True, text=False)
     print("Device checked, continuing...")
 
