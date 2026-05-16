@@ -68,7 +68,7 @@ def check():
     
     # clean up the mess i guess?
     time.sleep(1.25)
-    for i in range(3):
+    for _ in range(3):
         subprocess.run(["mpremote", "reset"], capture_output=True, text=True)
         time.sleep(1.25)
 
