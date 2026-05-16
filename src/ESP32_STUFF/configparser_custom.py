@@ -1,3 +1,8 @@
+# i'm going to admit that THIS is the only piece of code actually done by gemini
+# do you REALLY think i was going to rewrite an INI parser
+# OR recompile wholeass micropython with configparser support?
+# just to add support to an ESP32?
+
 class ConfigParser:
     def __init__(self):
         print("Loaded custom configparser")
