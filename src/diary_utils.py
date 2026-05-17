@@ -41,7 +41,7 @@ def write_grade(subject:str="", grades:list[float]=None) -> None: # type: ignore
     if not subject in config:
         config.add_section(subject)
         config[subject]["grades"] = str(grades)
-        print(config[subject]["grades"])
+        #print(config[subject]["grades"])
     else:
         currgrades = read_grades(subject)
         for i in grades:

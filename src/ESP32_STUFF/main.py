@@ -2,19 +2,62 @@ import grades_utils
 import diary_utils
 import sys
 import time
+import configparser_custom
 from ulab import numpy as np # type: ignore
+config = configparser_custom.ConfigParser()
+
+# constants
+BOARD_NAME = "ESP32"
+PYTHON_VER = sys.version
+NETWORK_INI_NAME = "network.ini"
+
+def check_connection() -> bool:
+    connected = False
+
+    for _ in range(20):
+        if sta_if.isconnected():
+            connected = True
+            break
+        time.sleep(1)
+
+    return connected
+
+def connection_message(connected:bool) -> None:
+    if connected:
+        print("Network connected!")
+    else:
+        print("Connection failed!")
 
 try:
     import network # type: ignore
     print("Initializing networking...")
     sta_if = network.WLAN(network.STA_IF); sta_if.active(True)
+    try:
+        with open(NETWORK_INI_NAME, "r") as f:
+            pass
+        
+        config_file = config.read(NETWORK_INI_NAME)
+
+        try:
+            if "NETWORK" in config:
+                print("Found connection configuration!")
+                SSID = config["NETWORK"]["SSID"]
+                PASSWORD = config["NETWORK"]["PASSWD"]
+                print("Connecting...")
+                sta_if.connect(SSID, PASSWORD)
+                connected = check_connection()
+                connection_message(connected)
+            else:
+                print("No network configuration found!")
+        except:
+            print("Invalid network configuration! Erasing...")
+            with open(NETWORK_INI_NAME, "w") as f:
+                pass
+    except:
+        print("No network configuration found!")
 except:
     print("no esp32?")
     exit()
-
-# constants
-BOARD_NAME = "ESP32"
-PYTHON_VER = sys.version
 
 inp = ""
 oginput = input
@@ -49,6 +92,7 @@ while inp != "exit":
         print("calculate grade (cg): yknow")
         print("check mininum grade (cmg): yknow")
         print("write to diary (wd): yknow")
+        print("settings: yknow")
 
     elif inp == "calculate grade" or inp == "cg":
         grades = grades_utils.input_grades(add_list_option=True)
@@ -70,9 +114,11 @@ while inp != "exit":
         if (minimum_grade_to_fail != None):
             print("Minimun grade to fail: ", minimum_grade_to_fail)
         else:
-            print("No grade can make you fail ig lmao")
+            print("No grade can make you fail ig")
+
     elif inp == "write to diary" or inp == "wd":
         diary_utils.write_grade(input("Insert subject name: ").lower(), grades_utils.input_grades())
+
     elif inp == "settings":      
         setting = ""
         while setting != "exit":
@@ -89,9 +135,10 @@ while inp != "exit":
                     print("Scanning networks...")
 
                     networks = []
+                    ssid:bytes = b""
                     for i in sta_if.scan():
                         ssid,_,_,_,_,_ = i
-                        networks.append(ssid.decode("utf-8"))
+                        networks.append(ssid.decode("utf-8", errors="replace"))
                     
                     print("Choose network to connect to:")
 
@@ -111,20 +158,22 @@ while inp != "exit":
 
                     password = input("Insert password for network: ")
                     print("Connecting...")
-                    sta_if.connect(networks[network_choose], password)
-                    connected = False
+                    SSID = networks[network_choose]
+                    sta_if.connect(SSID, password)
                     time.sleep(3)
-                    
-                    for i in range(20):
-                        if sta_if.isconnected():
-                            connected = True
-                            break
-                        time.sleep(1)
 
-                    if connected:
-                        print("Network connected!")
-                    else:
-                        print("Connection failed!")
+                    connected = check_connection()
+                    connection_message(connected)
+                    config_file = config.read(NETWORK_INI_NAME)
+
+                    if not "NETWORK" in config:
+                        config.add_section("NETWORK")
+
+                    config["NETWORK"]["SSID"] = SSID
+                    config["NETWORK"]["PASSWD"] = password
+                        
+                    with open(NETWORK_INI_NAME, 'w') as configfile:
+                        config.write(configfile)
 
                 elif setting == 2:
                     print(f"1.0, running on {BOARD_NAME}")

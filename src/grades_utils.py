@@ -1,7 +1,6 @@
 from number_utils import is_valid_number
 import diary_utils
 
-
 def grades_calculator(grades: list[float]) -> float:
     if not grades:
         return 0.0
@@ -12,7 +11,6 @@ def grades_calculator(grades: list[float]) -> float:
         grade += float(i)
 
     return grade / length
-
 
 def input_grades(add_list_option=False) -> list[float]:
     list_grades = []
