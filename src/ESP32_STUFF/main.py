@@ -41,11 +41,12 @@ try:
         try:
             if "NETWORK" in config:
                 print("Found connection configuration!")
-                SSID = config["NETWORK"]["SSID"]
-                PASSWORD = config["NETWORK"]["PASSWD"]
+                SSID:str = config["NETWORK"]["SSID"]
+                PASSWORD:str = config["NETWORK"]["PASSWD"]
+
                 print("Connecting...")
                 sta_if.connect(SSID, PASSWORD)
-                connected = check_connection()
+                connected:bool = check_connection()
                 connection_message(connected)
             else:
                 print("No network configuration found!")
@@ -62,7 +63,7 @@ except:
 inp = ""
 oginput = input
 
-def input(str="") -> str:
+def input(str:str="") -> str:
     try:
         return oginput(str)
     except (KeyboardInterrupt, EOFError):
@@ -134,7 +135,7 @@ while inp != "exit":
 
                     print("Scanning networks...")
 
-                    networks = []
+                    networks:list = []
                     ssid:bytes = b""
                     for i in sta_if.scan():
                         ssid,_,_,_,_,_ = i
